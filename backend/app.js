@@ -6,20 +6,10 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const app = express();
 
-
 /*
- * ================================
+ * =====================================================
  * CORS
- * ================================
- *
- * CLIENT_URL is provided through
- * environment variables.
- *
- * Local:
- * http://localhost:5173
- *
- * Production:
- * https://your-frontend.vercel.app
+ * =====================================================
  */
 
 const allowedOrigins = (
@@ -29,58 +19,75 @@ const allowedOrigins = (
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-app.use(
-    cors({
-        origin: (origin, callback) => {
+const corsOptions = {
+    origin: (origin, callback) => {
 
-            /*
-             * Allow requests without an origin.
-             * Useful for Postman/server-to-server requests.
-             */
-
-            if (!origin) {
-                return callback(null, true);
-            }
-
-            /*
-             * Allow configured frontend origins.
-             */
-
-            if (allowedOrigins.includes(origin)) {
-                return callback(null, true);
-            }
-
-            return callback(
-                new Error(
-                    "CORS policy: Origin not allowed."
-                )
-            );
+        // Allow Postman / server-to-server requests
+        if (!origin) {
+            return callback(null, true);
         }
-    })
-);
+
+        // Exact origins from CLIENT_URL
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Allow Vercel deployment URLs for Aura Engine
+        if (
+            origin.endsWith(".vercel.app") &&
+            origin.includes("aura-engine")
+        ) {
+            return callback(null, true);
+        }
+
+        console.log("CORS blocked origin:", origin);
+
+        return callback(null, false);
+    },
+
+    methods: [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+    ],
+
+    allowedHeaders: [
+        "Content-Type",
+        "Authorization"
+    ],
+
+    optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+
+/*
+ * =====================================================
+ * BODY PARSER
+ * =====================================================
+ */
 
 app.use(express.json());
 
-
 /*
- * ================================
+ * =====================================================
  * HEALTH CHECK
- * ================================
+ * =====================================================
  */
 
 app.get("/api/health", (req, res) => {
     res.status(200).json({
         success: true,
-        message:
-            "Aura Engine API is running."
+        message: "Aura Engine API is running."
     });
 });
 
-
 /*
- * ================================
+ * =====================================================
  * INVENTORY ROUTES
- * ================================
+ * =====================================================
  */
 
 app.use(
@@ -88,11 +95,10 @@ app.use(
     inventoryRoutes
 );
 
-
 /*
- * ================================
+ * =====================================================
  * ANALYTICS ROUTES
- * ================================
+ * =====================================================
  */
 
 app.use(
@@ -100,11 +106,10 @@ app.use(
     analyticsRoutes
 );
 
-
 /*
- * ================================
+ * =====================================================
  * 404 HANDLER
- * ================================
+ * =====================================================
  */
 
 app.use((req, res) => {
@@ -114,11 +119,10 @@ app.use((req, res) => {
     });
 });
 
-
 /*
- * ================================
+ * =====================================================
  * GLOBAL ERROR HANDLER
- * ================================
+ * =====================================================
  */
 
 app.use(
@@ -131,11 +135,9 @@ app.use(
 
         res.status(500).json({
             success: false,
-            message:
-                "Internal server error."
+            message: "Internal server error."
         });
     }
 );
-
 
 module.exports = app;
