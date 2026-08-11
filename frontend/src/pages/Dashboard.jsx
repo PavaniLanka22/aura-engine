@@ -9,7 +9,7 @@ import {
 
 import { getAnalytics } from "../api/analyticsApi";
 
-import KpiCard from "../components/KpiCard";
+import KpiCard from "../components/KPIcard";
 import RestockChart from "../components/RestockChart";
 import PortfolioChart from "../components/PortfolioChart";
 
